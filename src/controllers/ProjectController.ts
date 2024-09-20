@@ -8,7 +8,7 @@ export class ProjectController {
         const project = new Project(req.body)
         try {
             const response = await project.save()
-            res.send(response)
+            res.status(201).send(response)
         } catch (error) {
             console.log('[CREATEPROJECT]', error.message)
         }
