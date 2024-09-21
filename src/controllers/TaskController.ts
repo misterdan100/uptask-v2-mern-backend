@@ -34,17 +34,7 @@ export class TaskController {
     
     static getTaskByID = async (req: Request, res: Response) => {
         try {
-            const task = await Task.findById(req.params.taskId).populate('project')
-            if(!task) {
-                const error = new Error('Task not found')
-                return res.status(404).json({error: error.message})
-            }
-            // check if the task belongs to the right project
-            if(task.project.id !== req.project.id) {
-                const error = new Error('Invalid action')
-                return res.status(400).json({error: error.message})
-            }
-            res.status(200).json(task)
+            res.status(200).json(req.task)
         } catch (error) {
             console.log('[GETTASKBYID]', error.message)
             res.status(500).json({error: 'There was an error getting task'})
@@ -53,18 +43,7 @@ export class TaskController {
 
     static updateTask = async (req: Request, res: Response) => {
         try {
-            const { taskId } = req.params
-            const task = await Task.findById(taskId)
-            if(!task) {
-                const error = new Error('Task not updated')
-                return res.status(400).json({error: error.message})
-            }
-            // check if the task belongs to the right project
-            if(task.project.toString() !== req.project.id) {
-                const error = new Error('Invalid action')
-                return res.status(400).json({error: error.message})
-            }
-            await task.updateOne(req.body)
+            await req.task.updateOne(req.body)
             res.status(200).send('Task updated correctly')
         } catch (error) {
             console.log('[UPDATETASK]', error.message)
@@ -74,24 +53,12 @@ export class TaskController {
     
     static deleteTaskByID = async (req: Request, res: Response) => {
         try {
-            const { taskId, projectId } = req.params
-            const task = await Task.findById(taskId)
-            if(!task) {
-                const error = new Error('Task not updated')
-                return res.status(400).json({error: error.message})
-            }
-            // check if the task belongs to the right project
-            if(task.project.toString() !== req.project.id) {
-                const error = new Error('Invalid action')
-                return res.status(400).json({error: error.message})
-            }
-            
             const {project} = req
-            const projectTasksUpdated = project.tasks.filter(task => task.toString() !== taskId)
+            const projectTasksUpdated = project.tasks.filter(task => task.toString() !== req.task.id.toString())
             project.tasks = projectTasksUpdated
             
-            await Promise.allSettled([await task.deleteOne(), await project.save()])
-            res.status(200).json(project)
+            await Promise.allSettled([await req.task.deleteOne(), await project.save()])
+            res.status(200).send('Task deleted correctly')
             
         } catch (error) {
             console.log('[DELETETASKBYID]', error.message)
@@ -101,20 +68,9 @@ export class TaskController {
 
     static updateStatus = async (req: Request, res: Response) => {
         try {
-            const { taskId } = req.params
-            const task = await Task.findById(taskId)
-            if(!task) {
-                const error = new Error('Task not updated')
-                return res.status(400).json({error: error.message})
-            }
-            // check if the task belongs to the right project
-            if(task.project.toString() !== req.project.id) {
-                const error = new Error('Invalid action')
-                return res.status(400).json({error: error.message})
-            }
             const { status } = req.body
-            task.status = status
-            await task.save()
+            req.task.status = status
+            await req.task.save()
             res.status(200).send('Status Task updated')
         } catch (error) {
             console.log('[UPDATESTATUS]', error.message)

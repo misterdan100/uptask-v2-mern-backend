@@ -10,7 +10,7 @@ declare global { // declarate a global type
     }
 }
 
-export async function validateProjectExists(
+export async function projectExists(
   req: Request,
   res: Response,
   next: NextFunction
