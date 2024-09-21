@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { body, param } from 'express-validator'
+import { body, param, validationResult } from 'express-validator'
 import { ProjectController } from '../controllers/ProjectController'
 import { handleInputErrors } from '../middleware/validation'
 import { TaskController } from '../controllers/TaskController'
@@ -36,6 +36,22 @@ router.delete('/:id',
 )
 
 /** Routes for tasks */
-router.post('/:projectId/tasks', validateProjectExists, TaskController.createTask)
+router.param("projectId", validateProjectExists);
+router.param("taskId", param("taskId").isMongoId().withMessage("Invalid ID"));
+
+router.post(
+  "/:projectId/tasks",
+  body("name").notEmpty().withMessage("Name Task is required"),
+  body("description").notEmpty().withMessage("A description is required"),
+  handleInputErrors,
+  TaskController.createTask
+);
+
+router.get("/:projectId/tasks", TaskController.getProjectTasks);
+
+router.get("/:projectId/tasks/:taskId",
+  handleInputErrors,
+  TaskController.getTaskByID
+);
 
 export default router
