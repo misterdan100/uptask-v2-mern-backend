@@ -66,4 +66,10 @@ router.delete("/:projectId/tasks/:taskId",
   TaskController.deleteTaskByID
 );
 
+router.post('/:projectId/tasks/:taskId/status',
+  body('status').notEmpty().withMessage('Status is required'),
+  handleInputErrors,
+  TaskController.updateStatus
+)
+
 export default router

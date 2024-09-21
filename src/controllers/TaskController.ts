@@ -98,4 +98,27 @@ export class TaskController {
             res.status(500).json({error: 'There was an error deleting task'})
         }
     }
+
+    static updateStatus = async (req: Request, res: Response) => {
+        try {
+            const { taskId } = req.params
+            const task = await Task.findById(taskId)
+            if(!task) {
+                const error = new Error('Task not updated')
+                return res.status(400).json({error: error.message})
+            }
+            // check if the task belongs to the right project
+            if(task.project.toString() !== req.project.id) {
+                const error = new Error('Invalid action')
+                return res.status(400).json({error: error.message})
+            }
+            const { status } = req.body
+            task.status = status
+            await task.save()
+            res.status(200).send('Status Task updated')
+        } catch (error) {
+            console.log('[UPDATESTATUS]', error.message)
+            res.status(500).json({error: 'There was an error updating status'})
+        }
+    }
 }
