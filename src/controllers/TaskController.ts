@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import Task from '../models/Task'
+import Project from '../models/Project'
 
 
 export class TaskController {
@@ -47,6 +48,54 @@ export class TaskController {
         } catch (error) {
             console.log('[GETTASKBYID]', error.message)
             res.status(500).json({error: 'There was an error getting task'})
+        }
+    }
+
+    static updateTask = async (req: Request, res: Response) => {
+        try {
+            const { taskId } = req.params
+            const task = await Task.findById(taskId)
+            if(!task) {
+                const error = new Error('Task not updated')
+                return res.status(400).json({error: error.message})
+            }
+            // check if the task belongs to the right project
+            if(task.project.toString() !== req.project.id) {
+                const error = new Error('Invalid action')
+                return res.status(400).json({error: error.message})
+            }
+            await task.updateOne(req.body)
+            res.status(200).send('Task updated correctly')
+        } catch (error) {
+            console.log('[UPDATETASK]', error.message)
+            res.status(500).json({error: 'There was an error updating task'})
+        }
+    }
+    
+    static deleteTaskByID = async (req: Request, res: Response) => {
+        try {
+            const { taskId, projectId } = req.params
+            const task = await Task.findById(taskId)
+            if(!task) {
+                const error = new Error('Task not updated')
+                return res.status(400).json({error: error.message})
+            }
+            // check if the task belongs to the right project
+            if(task.project.toString() !== req.project.id) {
+                const error = new Error('Invalid action')
+                return res.status(400).json({error: error.message})
+            }
+            
+            const {project} = req
+            const projectTasksUpdated = project.tasks.filter(task => task.toString() !== taskId)
+            project.tasks = projectTasksUpdated
+            
+            await Promise.allSettled([await task.deleteOne(), await project.save()])
+            res.status(200).json(project)
+            
+        } catch (error) {
+            console.log('[DELETETASKBYID]', error.message)
+            res.status(500).json({error: 'There was an error deleting task'})
         }
     }
 }

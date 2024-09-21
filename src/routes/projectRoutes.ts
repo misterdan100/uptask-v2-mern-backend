@@ -54,4 +54,16 @@ router.get("/:projectId/tasks/:taskId",
   TaskController.getTaskByID
 );
 
+router.put("/:projectId/tasks/:taskId",
+  body("name").notEmpty().withMessage("Name Task is required"),
+  body("description").notEmpty().withMessage("A description is required"),
+  handleInputErrors,
+  TaskController.updateTask
+);
+
+router.delete("/:projectId/tasks/:taskId",
+  handleInputErrors,
+  TaskController.deleteTaskByID
+);
+
 export default router
