@@ -1,10 +1,8 @@
 import { Request, Response } from "express"
-import bcrypt from 'bcrypt'
 import User from "../models/User"
-import { hashPassword } from "../utils/auth"
+import { checkPassword, hashPassword } from "../utils/auth"
 import Token from "../models/Token"
 import { generateToken } from "../utils/token"
-import { transporter } from "../config/nodemailer"
 import { AuthEmail } from "../emails/AuthEmail"
 
 export class AuthController {
@@ -52,7 +50,7 @@ export class AuthController {
             const tokenExists = await Token.findOne({token})
             if(!tokenExists) {
                 const error = new Error('Token not valid')
-                return res.status(401).send({error: error.message})
+                return res.status(404).send({error: error.message})
             }
 
             const user = await User.findById(tokenExists.user)
@@ -63,6 +61,49 @@ export class AuthController {
         } catch (error) {
             console.log(error.message)
             res.status(500).json({error: 'There was an error in confirm account'})
+        }
+    }
+    
+    static login = async (req: Request, res: Response) => {
+        try {
+            const { email, password } = req.body
+            const user = await User.findOne({email})
+
+            // check if user exists
+            if(!user) {
+                const error = new Error('User not found')
+                return res.status(404).json({error: error.message})
+            }
+            
+            // check if user is confirmated
+            if (!user.confirmed) {
+              const token = new Token();
+              token.user = user.id;
+              token.token = generateToken();
+              await token.save();
+
+              // Send confirmation email w/ mailtrap
+              AuthEmail.sendConfirmationEmail({
+                email: user.email,
+                name: user.name,
+                token: token.token,
+              });
+
+              const error = new Error("Account not confirmed, we have sent you a new confirmation e-mail");
+              return res.status(401).json({ error: error.message });
+            }
+            
+            // check if the password is correct
+            const isPasswordCorrect = await checkPassword(password, user.password)
+            if(!isPasswordCorrect) {
+                const error = new Error("The password is incorrect");
+                return res.status(401).json({ error: error.message });
+            }
+
+            return res.status(200).send('Authentication correctly')
+        } catch (error) {
+            console.log(error.message)
+            res.status(500).json({error: 'There was an error loging user'})
         }
     }
 }
