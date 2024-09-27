@@ -138,4 +138,33 @@ export class AuthController {
             res.status(500).json({error: 'There was an error in requestConfirmationCode'})
         }
     }
+
+    static forgotPassword = async (req: Request, res: Response) => {
+        try {
+            const { email } = req.body
+            const user = await User.findOne({email})
+            if(!user) {
+                const error = new Error('User not found')
+                return res.status(404).json({error: error.message})
+            }
+
+            const token = new Token()
+            token.token = generateToken()
+            token.user = user.id
+            await token.save()
+
+            AuthEmail.sendPasswordResetToken({
+                email: user.email,
+                name: user.name,
+                token: token.token
+            })
+
+            // const hashedPassword = await hashPassword(password)
+            // user.password = hashedPassword
+            // await user.save()
+            return res.status(200).send('Check your e-mail to instrucctions')
+        } catch (error) {
+            res.status(500).json({error: 'There was an error in forgot password'})
+        }
+    }
 }
