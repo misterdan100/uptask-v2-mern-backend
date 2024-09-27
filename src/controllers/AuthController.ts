@@ -106,4 +106,36 @@ export class AuthController {
             res.status(500).json({error: 'There was an error loging user'})
         }
     }
+
+    static requestConfirmationCode = async (req: Request, res: Response) => {
+        try {
+            const { email } = req.body
+
+            const user = await User.findOne({email})
+            if(!user) {
+                const error = new Error("User don't have an account")
+                return res.status(404).json({error: error.message})
+            }
+            
+            if(user.confirmed) {
+                const error = new Error("User is already confirm")
+                return res.status(403).json({error: error.message})    
+            }
+
+            const token = new Token()
+            token.token = generateToken()
+            token.user = user.id
+
+            AuthEmail.sendConfirmationEmail({
+                email: user.email,
+                name: user.name,
+                token: token.token,
+            })
+
+            await token.save()
+            res.status(200).send('Check your e-mail to get the new code')
+        } catch (error) {
+            res.status(500).json({error: 'There was an error in requestConfirmationCode'})
+        }
+    }
 }
