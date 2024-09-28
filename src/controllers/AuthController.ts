@@ -167,4 +167,42 @@ export class AuthController {
             res.status(500).json({error: 'There was an error in forgot password'})
         }
     }
+
+    static validateToken = async (req: Request, res: Response) => {
+        try {
+            const { token } = req.body
+            const tokenExist = await Token.findOne({token})
+            if(!tokenExist) {
+                const error = new Error('Token not found')
+                return res.status(404).json({error: error.message})
+            }
+
+            res.status(200).send('Valid Token, define a new password')
+        } catch (error) {
+            res.status(500).json({error: error.message})
+        }
+    }
+
+    static updatePasswordWithToken = async (req: Request, res: Response) => {
+        try {
+            const { token } = req.params
+            const { password } = req.body
+
+            const tokenExists = await Token.findOne({token})
+            if(!tokenExists) {
+                const error = new Error('Token not found')
+                return res.status(404).json({error: error.message})
+            }
+
+            const user = await User.findById(tokenExists.user)
+            const hashedPassword = await hashPassword(password)
+            user.password = hashedPassword
+
+            await Promise.allSettled([user.save(), tokenExists.deleteOne()])
+
+            res.status(200).send('Password reseted correctly')
+        } catch (error) {
+            res.status(500).json({error: 'There was an error in updatePasswordWithToken'})
+        }
+    }
 }
