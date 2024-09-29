@@ -207,4 +207,8 @@ export class AuthController {
             res.status(500).json({error: 'There was an error in updatePasswordWithToken'})
         }
     }
+
+    static user = async (req: Request, res: Response) => {
+        return res.json(req.user)
+    }
 }
