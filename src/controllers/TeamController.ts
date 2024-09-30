@@ -76,7 +76,7 @@ export class TeamMemberController {
 
     static getProjectTeam = async (req: Request, res: Response) => {
         try {
-            if(req.user.id.toString() !== req.project.manager.toString()) {
+            if(req.user.id.toString() !== req.project.manager.toString() && !req.project.team.includes(req.user.id.toString())) {
                 const error = new Error('Only manager can get all members in the project')
                 return res.status(401).json({error: error.message})
             }

@@ -41,3 +41,12 @@ export async function taskBelongsToProject(
     console.log('[TASKBELONGTOPROJECT]', error.message)
   }
 }
+
+export async function hasAuthorization( req: Request, res: Response, next: NextFunction) {
+  if(req.user.id.toString() !== req.project.manager.toString()) {
+    const error = new Error('Unauthorized')
+    return res.status(401).json({error: error.message})
+  }
+  next()
+
+}

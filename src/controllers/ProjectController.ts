@@ -20,7 +20,8 @@ export class ProjectController {
         try {
             const project = await Project.find({
                 $or: [
-                    {manager: {$in: req.user.id}}
+                    {manager: {$in: req.user.id}},
+                    {team: {$in: req.user.id}}
                 ]
             })
             res.status(200).json(project)
@@ -38,7 +39,7 @@ export class ProjectController {
             }
 
             //validate if user is manager
-            if(project.manager.toString() !== req.user.id.toString()) {
+            if(project.manager.toString() !== req.user.id.toString() && !project.team.includes(req.user.id.toString())) {
                 const error = new Error('Invalid action')
                 return res.status(401).json({error: error.message})
             } 
