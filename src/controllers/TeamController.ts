@@ -10,7 +10,6 @@ export class TeamMemberController {
                 const error = new Error('User not found')
                 return res.status(404).json({error: error.message})
             }
-
             res.status(200).json(user)
             
         } catch (error) {
@@ -52,6 +51,7 @@ export class TeamMemberController {
 
     static removeMemberById = async (req: Request, res: Response) => {
         try {
+            const {userId} = req.params
             // validate if req user is manager
             if(req.user.id.toString() !== req.project.manager.toString()) {
                 const error = new Error('Only manager can delete user in the project')
@@ -59,12 +59,12 @@ export class TeamMemberController {
             }
 
             // validate if user to delete is in the project
-            if(!req.project.team.some(team => team.toString() === req.body.id.toString())) {
+            if(!req.project.team.some(team => team.toString() === userId.toString())) {
                 const error = new Error('User to delete is not in the project')
                 return res.status(404).json({error: error.message})
             }
 
-            req.project.team = req.project.team.filter( member => member.toString() !== req.body.id.toString())
+            req.project.team = req.project.team.filter( member => member.toString() !== userId.toString())
             await req.project.save()
 
             res.status(200).send('User deleted from project')
@@ -86,7 +86,7 @@ export class TeamMemberController {
                 select: 'id name email'
             })
 
-            res.status(200).json(biggerProject.team)
+            res.status(200).json({projectName: biggerProject.projectName, team: biggerProject.team})
         } catch (error) {
             res.status(500).json({error: error.message})
         }
