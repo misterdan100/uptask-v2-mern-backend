@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express'
 import Task from '../models/Task'
-import Project from '../models/Project'
 
 
 export class TaskController {
@@ -11,6 +10,14 @@ export class TaskController {
             const task = new Task(req.body)
             task.project = project.id
             project.tasks.push(task.id)
+
+            //save in history
+            const change = {
+                change: `Task created`,
+                changeBy: req.user.id
+            }
+            task.changeHistory.push(change)
+
             await Promise.allSettled([task.save(), project.save()])
             res.status(201).json('Tasks created correctly')
         } catch (error) {
@@ -43,7 +50,13 @@ export class TaskController {
 
     static updateTask = async (req: Request, res: Response) => {
         try {
-            await req.task.updateOne(req.body)
+            // set change history
+            const change = {
+                change: `Changes in the data`,
+                changeBy: req.user.id
+            }
+            req.task.changeHistory.push(change)
+            await Promise.allSettled([req.task.updateOne(req.body), req.task.save()])
             res.status(200).send('Task updated correctly')
         } catch (error) {
             console.log('[UPDATETASK]', error.message)
@@ -70,6 +83,18 @@ export class TaskController {
         try {
             const { status } = req.body
             req.task.status = status
+            if(status === 'pending') {
+                req.task.completedBy = null
+            } else {
+                req.task.completedBy = req.user.id
+            }
+            // set change history
+            const change = {
+                change: `status to ${status}`,
+                changeBy: req.user.id
+            }
+            req.task.changeHistory.push(change)
+
             await req.task.save()
             res.status(200).send('Status Task updated')
         } catch (error) {
