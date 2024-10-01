@@ -41,7 +41,10 @@ export class TaskController {
     
     static getTaskByID = async (req: Request, res: Response) => {
         try {
-            res.status(200).json(req.task)
+            const task = await Task.findById(req.task.id).populate([{
+                path: 'changeHistory.changeBy', select: 'name id'
+            }, {path: 'notes', populate: {path: 'createdBy', select: 'name id email'}}])
+            res.status(200).json(task)
         } catch (error) {
             console.log('[GETTASKBYID]', error.message)
             res.status(500).json({error: 'There was an error getting task'})
@@ -52,7 +55,7 @@ export class TaskController {
         try {
             // set change history
             const change = {
-                change: `Changes in the data`,
+                change: `Data updated`,
                 changeBy: req.user.id
             }
             req.task.changeHistory.push(change)
@@ -83,14 +86,9 @@ export class TaskController {
         try {
             const { status } = req.body
             req.task.status = status
-            if(status === 'pending') {
-                req.task.completedBy = null
-            } else {
-                req.task.completedBy = req.user.id
-            }
             // set change history
             const change = {
-                change: `status to ${status}`,
+                change: `Status to ${status}`,
                 changeBy: req.user.id
             }
             req.task.changeHistory.push(change)
