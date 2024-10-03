@@ -211,4 +211,50 @@ export class AuthController {
     static user = async (req: Request, res: Response) => {
         return res.json(req.user)
     }
+
+    static updateProfile = async (req: Request, res: Response) => {
+        try {
+            const { user } = req
+            const { name, email } = req.body
+
+            // check if email is own of other user
+            // check if email is the current same email
+            const userExists = await User.findOne({email})
+            if(userExists && userExists.id.toString() !== user.id.toString()) {
+                const error = new Error('E-mail is being used by another user')
+                return res.status(409).json({error: error.message})
+            }
+
+            req.user.name = name
+            req.user.email = email
+
+            await req.user.save()
+            res.status(200).send('Profile updated')            
+        } catch (error) {
+            console.log('[updateProfile]', error.message)
+            res.status(500).json({error: error.message})
+        }
+    }
+
+    static updateCurrentUserPassword = async (req: Request, res: Response) => {
+        try {
+            const user = await User.findById(req.user.id)
+            const { current_password, password } = req.body
+
+            // chechk if current password is valited
+            const isPasswordCorrect = await checkPassword(current_password, user.password)
+            if(!isPasswordCorrect) {
+                const error = new Error('Current password is wrong')
+                return res.status(401).json({error: error.message})
+            }
+
+            user.password = await hashPassword(password)
+            await user.save()
+
+            res.status(200).send('Password changed')
+        } catch (error) {
+            console.log('[updateCurrentUserPassword]', error)
+            res.status(500).json({error: error.message})
+        }
+    }
 }
