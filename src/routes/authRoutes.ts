@@ -91,4 +91,11 @@ router.post('/update-password',
     AuthController.updateCurrentUserPassword
 )
 
+router.post('/check-password',
+    authenticate,
+    body('password').isLength({min: 8}).withMessage('Password min 8 characters'),
+    handleInputErrors,
+    AuthController.checkPassword
+)
+
 export default router

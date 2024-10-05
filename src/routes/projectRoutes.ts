@@ -31,26 +31,32 @@ router.post('/',
     handleInputErrors,
     ProjectController.getProjectById
   )
-  router.put('/:id', 
+
+  router.param("projectId", projectExists);
+
+  router.put('/:projectId', 
+    param('projectId').isMongoId().withMessage('Invalid ID'),
     body('projectName').notEmpty().withMessage('Name Project is required.'),
     body('clientName').notEmpty().withMessage('Name Client is required.'),
     body('description').notEmpty().withMessage('Description is required.'),
-    param('id').isMongoId().withMessage('Invalid ID'),
     handleInputErrors,
+    hasAuthorization,
     ProjectController.updateProjectById
   )
-  router.delete('/:id', 
-    param('id').isMongoId().withMessage('Invalid ID'),
+  router.delete('/:projectId', 
+    param('projectId').isMongoId().withMessage('Invalid ID'),
     handleInputErrors,
+    hasAuthorization,
     ProjectController.deleteProjectById
   )
   
   /** Routes for tasks */
-  router.param("projectId", projectExists);
+
   router.param("taskId", param("taskId").isMongoId().withMessage("Invalid ID"));
   router.param('taskId', taskExist)
   router.param('taskId', taskBelongsToProject)
-  
+
+  /** Routes for tasks */
   router.post(
     "/:projectId/tasks",
     hasAuthorization,
